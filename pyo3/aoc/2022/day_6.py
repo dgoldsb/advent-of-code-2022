@@ -3,7 +3,6 @@ from functools import lru_cache
 
 from aoc.helpers import time_it
 
-
 PACK_LEN = 4
 MESS_LEN = 14
 
@@ -49,6 +48,7 @@ def _all(input_: str):
             and b_result is None
         ):
             b_result = i + 1
+            break
 
     return a_result, b_result
 
