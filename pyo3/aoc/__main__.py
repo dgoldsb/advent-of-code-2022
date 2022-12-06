@@ -13,14 +13,14 @@ def _get_solver(year: int, day: int, part: str) -> Callable[[str], Any]:
 
 def main():
     for year in (2022,):
-        for day in range(1, 3):
+        for day in range(1, 26):
             for part in ("a", "b"):
                 try:
                     solver = _get_solver(year, day, part)
                     solution = solver(get_input(year, day))
                     print(f"{year}.{day}.{part}: {solution}")
-                except (AttributeError, ImportError) as ex:
-                    print(ex)
+                except (AttributeError, ImportError):
+                    continue
     total_time = sum(TIMES.values())
     print(f"\nTotal time taken (solvers only): {total_time}")
 

@@ -1,10 +1,9 @@
-"""Solve day 1."""
+"""Solve day 2."""
 from aoc.helpers import time_it
 
 
 @time_it
 def part_a(input_: str):
-    """Part a?"""
     score = 0
     for line in input_.split("\n"):
         try:
@@ -45,7 +44,6 @@ def part_a(input_: str):
 
 @time_it
 def part_b(input_: str):
-    """Part b."""
     score = 0
     for line in input_.split("\n"):
         try:
