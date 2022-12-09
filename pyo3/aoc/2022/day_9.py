@@ -20,22 +20,17 @@ class Rope:
         self.tail_locations = set()
 
     def _follow(self, index: int):
-        head = self.__segment_locations[index - 1]
-        tail = self.__segment_locations[index]
-        x_diff = head[0] - tail[0]
-        y_diff = head[1] - tail[1]
+        head_x, head_y = self.__segment_locations[index - 1]
+        tail_x, tail_y = self.__segment_locations[index]
+        x_diff = head_x - tail_x
+        y_diff = head_y - tail_y
 
         if abs(x_diff) > 1 or abs(y_diff) > 1:
-            if x_diff == 0 or y_diff == 0:
-                # With contraction.
-                contraction = True
-            else:
-                # Without contraction.
-                contraction = False
+            contraction = (x_diff == 0 or y_diff == 0)
             x_mod = _get_mod(x_diff, contraction)
             y_mod = _get_mod(y_diff, contraction)
 
-            self.__segment_locations[index] = (tail[0] + x_mod, tail[1] + y_mod)
+            self.__segment_locations[index] = (tail_x + x_mod, tail_y + y_mod)
 
     def _apply(self, instruction: chr):
         match instruction:
