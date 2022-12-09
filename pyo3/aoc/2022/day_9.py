@@ -4,14 +4,17 @@ from aoc.helpers import time_it
 
 def _get_mod(diff: int, contract: bool):
     if contract:
-        if abs(diff) // 2 == 0:
+        _mod = 1 if diff > 1 or diff < -1 else 0
+        if _mod == 0:
             return 0
-        _mod = abs(diff) // 2
     else:
         if diff == 0:
             return 0
-        _mod = abs(diff)
-    return int(_mod / abs(_mod)) * int(diff / abs(diff))
+        _mod = diff
+
+    if diff < 0 and _mod:
+        return -1
+    return 1
 
 
 class Rope:
@@ -25,8 +28,8 @@ class Rope:
         x_diff = head_x - tail_x
         y_diff = head_y - tail_y
 
-        if abs(x_diff) > 1 or abs(y_diff) > 1:
-            contraction = (x_diff == 0 or y_diff == 0)
+        if not (-1 <= x_diff <= 1 and -1 <= y_diff <= 1):
+            contraction = x_diff == 0 or y_diff == 0
             x_mod = _get_mod(x_diff, contraction)
             y_mod = _get_mod(y_diff, contraction)
 
