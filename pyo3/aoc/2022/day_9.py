@@ -52,7 +52,10 @@ class Rope:
             self.__segment_locations[0][1] + mod[1],
         )
         for i in range(1, len(self.__segment_locations)):
+            old = self.__segment_locations[i]
             self._follow(i)
+            if old == self.__segment_locations[i]:
+                break
         self.tail_locations.add(self.__segment_locations[-1])
 
     def apply(self, instruction: chr, times: int):
