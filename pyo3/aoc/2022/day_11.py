@@ -4,6 +4,14 @@ from collections import deque
 
 from aoc.helpers import time_it
 
+try:
+    from aoc_py03 import lcm
+except ImportError:
+    def lcm(mods):
+        worry_mod = 1
+        for mod in mods:
+            worry_mod *=mod
+
 
 class Monkey:
     REGEX = re.compile(
@@ -78,15 +86,7 @@ class Monkey:
             monkeys[i].set_monkeys(monkeys[link[0]], monkeys[link[1]])
 
         if not is_a:
-            # TODO: Optimize and separate.
-            all_mods = list(m.mod for m in monkeys)
-            max_mod = max(all_mods)
-            worry_mod = max_mod
-            while True:
-                if all(worry_mod % m == 0 for m in all_mods):
-                    break
-                worry_mod += max_mod
-
+            worry_mod = lcm(list(m.mod for m in monkeys))
             for monkey in monkeys:
                 monkey.worry_mod = worry_mod
         return monkeys
