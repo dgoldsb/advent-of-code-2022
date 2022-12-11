@@ -78,6 +78,7 @@ class Monkey:
             monkeys[i].set_monkeys(monkeys[link[0]], monkeys[link[1]])
 
         if not is_a:
+            # TODO: Optimize and separate.
             all_mods = list(m.mod for m in monkeys)
             max_mod = max(all_mods)
             worry_mod = max_mod
@@ -109,5 +110,4 @@ def part_b(input_: str):
     monkeys = Monkey.from_input(input_, False)
     for _ in range(10**4):
         Monkey.do_round(monkeys)
-
     return Monkey.business(monkeys)
