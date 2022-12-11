@@ -1,5 +1,6 @@
 """Solve day 11."""
 import re
+from collections import deque
 
 from aoc.helpers import time_it
 
@@ -11,7 +12,7 @@ class Monkey:
 
     def __init__(self, id_, multiply: bool, second: int | None, mod: int):
         self.id = id_
-        self.items: list[int] = []
+        self.items = deque()
         self.inspect_count = 0
         self.__multiply = multiply
         self.__second = second
@@ -27,7 +28,7 @@ class Monkey:
 
     def do_turn(self):
         while self.items:
-            item = self.items.pop(0)
+            item = self.items.popleft()
             self.inspect_count += 1
 
             if self.__multiply:
@@ -68,7 +69,8 @@ class Monkey:
                 second=None if result[3] == "old" else int(result[3]),
                 mod=int(result[4]),
             )
-            monkey.items = [int(i) for i in result[1].split(", ")]
+            for i in result[1].split(", "):
+                monkey.items.append(int(i))
             monkeys.append(monkey)
             links.append((int(result[5]), int(result[6])))
 
