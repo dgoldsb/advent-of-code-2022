@@ -8,9 +8,11 @@ try:
     from aoc_py03 import lcm
 except ImportError:
     def lcm(mods):
+        """Some common multiple, might be faster than computing."""
         worry_mod = 1
         for mod in mods:
-            worry_mod *=mod
+            worry_mod *= mod
+        return worry_mod
 
 
 class Monkey:
