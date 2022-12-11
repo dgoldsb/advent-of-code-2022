@@ -15,7 +15,8 @@ class Monkey:
         self.inspect_count = 0
         self.__multiply = multiply
         self.__second = second
-        self.__mod = mod
+        self.mod = mod
+        self.worry_mod = None
 
         self.__monkey_true: Monkey = None  # type: ignore
         self.__monkey_false: Monkey = None  # type: ignore
@@ -39,9 +40,12 @@ class Monkey:
                 case False, second:
                     item += second
 
-            item = item // 3
+            if self.worry_mod is None:
+                item = item // 3
+            else:
+                item %= self.worry_mod
 
-            if (item % self.__mod) == 0:
+            if (item % self.mod) == 0:
                 self.__monkey_true.items.append(item)
             else:
                 self.__monkey_false.items.append(item)
@@ -52,7 +56,7 @@ class Monkey:
             monkey.do_turn()
 
     @classmethod
-    def from_input(cls, input_: str) -> list["Monkey"]:
+    def from_input(cls, input_: str, is_a: bool) -> list["Monkey"]:
         results = cls.REGEX.findall(input_)
         monkeys = []
         links = []
@@ -69,6 +73,18 @@ class Monkey:
 
         for i, link in enumerate(links):
             monkeys[i].set_monkeys(monkeys[link[0]], monkeys[link[1]])
+
+        if not is_a:
+            all_mods = list(m.mod for m in monkeys)
+            max_mod = max(all_mods)
+            worry_mod = max_mod
+            while True:
+                if all(worry_mod % m == 0 for m in all_mods):
+                    break
+                worry_mod += max_mod
+
+            for monkey in monkeys:
+                monkey.worry_mod = worry_mod
         return monkeys
 
     @classmethod
@@ -79,7 +95,7 @@ class Monkey:
 
 @time_it
 def part_a(input_: str):
-    monkeys = Monkey.from_input(input_)
+    monkeys = Monkey.from_input(input_, True)
     for _ in range(20):
         Monkey.do_round(monkeys)
     return Monkey.business(monkeys)
@@ -87,4 +103,8 @@ def part_a(input_: str):
 
 @time_it
 def part_b(input_: str):
-    return None
+    monkeys = Monkey.from_input(input_, False)
+    for _ in range(10**4):
+        Monkey.do_round(monkeys)
+
+    return Monkey.business(monkeys)
