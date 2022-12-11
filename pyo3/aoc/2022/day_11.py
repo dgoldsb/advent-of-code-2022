@@ -30,15 +30,16 @@ class Monkey:
             item = self.items.pop(0)
             self.inspect_count += 1
 
-            match (self.__multiply, self.__second):
-                case True, None:
+            if self.__multiply:
+                if self.__second:
+                    item *= self.__second
+                else:
                     item *= item
-                case False, None:
+            else:
+                if self.__second:
+                    item += self.__second
+                else:
                     item += item
-                case True, second:
-                    item *= second
-                case False, second:
-                    item += second
 
             if self.worry_mod is None:
                 item = item // 3
