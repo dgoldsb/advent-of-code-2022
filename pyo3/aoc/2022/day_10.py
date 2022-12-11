@@ -10,7 +10,7 @@ def _reverse(pixels: str) -> list[str]:
     instructions = []
 
     while cycle < len(pixels) - 2:
-        future_cycle = (cycle + 2)
+        future_cycle = cycle + 2
         is_lit = x_register - 1 <= future_cycle % 40 <= x_register + 1
         should_be_lit = pixels[future_cycle] == "#"
 
@@ -18,7 +18,7 @@ def _reverse(pixels: str) -> list[str]:
             instructions += ["noop"]
             cycle += 1
         elif is_lit and not should_be_lit:
-            move = future_cycle  % 40 - x_register + 3
+            move = future_cycle % 40 - x_register + 3
             instructions += [f"addx {move}"]
             x_register += move
             cycle += 2
@@ -112,5 +112,7 @@ art = """
 ####### ####### ## ## ##                
      ##      ##                         
 ####### ####### ## ## ##                
-""".replace("\n", "")
+""".replace(
+    "\n", ""
+)
 instructions = _reverse(art)
