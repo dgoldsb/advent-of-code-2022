@@ -10,7 +10,7 @@ def _parse_input(
     # TODO: This function is another optimization candidate.
     # The index in the input string is the "node identifier".
     line_length = input_.find("\n") + 1
-    start = input_.find("S")
+    start = input_.find("S") if not is_b else len(input_) + 2
     goal = input_.find("E")
 
     # Cheeky hack: replace `S` and `E` with characters with the desired `ord`.
@@ -34,12 +34,12 @@ def _parse_input(
                 # Another cheeky hack: for part B we replace "a" with a index out of
                 # our bounds.
                 if input_[idx] == "a" and is_b:
-                    from_idx = len(input_) + 2
+                    from_idx = start
                 else:
                     from_idx = idx
 
                 if input_[other_idx] == "a" and is_b:
-                    to_idx = len(input_) + 2
+                    to_idx = start
                 else:
                     to_idx = other_idx
                 successors[from_idx] = successors.get(from_idx, list()) + [(1, to_idx)]
@@ -48,12 +48,10 @@ def _parse_input(
 
 @time_it
 def part_a(input_: str):
-    path = dijkstra(*_parse_input(input_, False))
-    return len(path) - 1
+    return len(dijkstra(*_parse_input(input_, False))[1:])
 
 
 @time_it
 def part_b(input_: str):
     goal, start, successors = _parse_input(input_, True)
-    path = dijkstra(start, goal, successors)
-    return len(path) - 2
+    return len(dijkstra(start, goal, successors)[1:])
