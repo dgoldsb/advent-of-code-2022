@@ -7,6 +7,7 @@ from aoc_py03 import dijkstra
 def _parse_input(
     input_: str, is_b: bool
 ) -> tuple[int, int, dict[int, list[tuple[int, int]]]]:
+    # TODO: This function is another optimization candidate.
     # The index in the input string is the "node identifier".
     line_length = input_.find("\n") + 1
     start = input_.find("S")
