@@ -1,4 +1,6 @@
 """Solve day 12."""
+from collections import defaultdict
+
 from aoc.helpers import time_it
 
 from aoc_py03 import dijkstra
@@ -7,7 +9,6 @@ from aoc_py03 import dijkstra
 def _parse_input(
     input_: str, is_b: bool
 ) -> tuple[int, int, dict[int, list[tuple[int, int]]]]:
-    # TODO: This function is another optimization candidate.
     # The index in the input string is the "node identifier".
     line_length = input_.find("\n") + 1
     start = input_.find("S") if not is_b else len(input_) + 2
@@ -15,7 +16,7 @@ def _parse_input(
 
     # Cheeky hack: replace `S` and `E` with characters with the desired `ord`.
     input_ = input_.replace("S", "`").replace("E", "{")
-    successors = {}
+    successors = defaultdict(list)
 
     offsets = (1, -1, line_length, -line_length)
     for idx, char in enumerate(input_):
@@ -42,7 +43,7 @@ def _parse_input(
                     to_idx = start
                 else:
                     to_idx = other_idx
-                successors[from_idx] = successors.get(from_idx, list()) + [(1, to_idx)]
+                successors[from_idx].append((1, to_idx))
     return start, goal, successors
 
 
