@@ -7,6 +7,7 @@ from aoc.helpers import time_it
 try:
     from aoc_py03 import lcm
 except ImportError:
+
     def lcm(mods):
         """Some common multiple, might be faster than computing."""
         worry_mod = 1
