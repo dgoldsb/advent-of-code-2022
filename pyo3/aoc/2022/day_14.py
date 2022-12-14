@@ -8,27 +8,13 @@ class FreeFallError(RuntimeError):
     """Sand is in a free-fall."""
 
 
-class FullOfSandError(RuntimeError):
-    """The sand spawn position is taken!"""
-
-
-def drop_grain(topology: set[tuple[int, int]], spawn: tuple[int, int] = (500, 0)):
-    lowest_y = max((l[1] for l in topology))
-    if spawn in topology:
-        raise FullOfSandError("Sand everywhere!")
-    location = spawn
-    while True:
-        if location[1] > lowest_y:
-            raise FreeFallError("Grain of sand fell past the topology!")
-
-        for mod in MODS:
-            location_candidate = (location[0] + mod[0], location[1] + mod[1])
-            if location_candidate not in topology:
-                location = location_candidate
-                break
-        else:
-            topology.add(location)
-            return
+def drop_grain(topology: set[tuple[int, int]], max_depth, spawn: tuple[int, int]):
+    if spawn[1] > max_depth:
+        raise FreeFallError("Sand dropped over the edge!")
+    for mod in MODS:
+        if (candidate := (spawn[0] + mod[0], spawn[1] + mod[1])) not in topology:
+            drop_grain(topology, max_depth, candidate)
+    topology.add(spawn)
 
 
 def _parse(input_) -> set[tuple[int, int]]:
@@ -48,14 +34,12 @@ def _parse(input_) -> set[tuple[int, int]]:
 
 
 def solve(topology) -> int:
-    counter = 0
-    while True:
-        try:
-            drop_grain(topology)
-            counter += 1
-        except (FreeFallError, FullOfSandError):
-            break
-    return counter
+    start_len = len(topology)
+    try:
+        drop_grain(topology, max(loc[1] for loc in topology), (500, 0))
+    except FreeFallError:
+        pass
+    return len(topology) - start_len
 
 
 @time_it
