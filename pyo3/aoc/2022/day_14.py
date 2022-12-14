@@ -4,12 +4,12 @@ from aoc.helpers import time_it
 MODS = [(0, 1), (-1, 1), (1, 1)]
 
 
-class FreeFall(RuntimeError):
+class FreeFallError(RuntimeError):
     """Sand is in a free-fall."""
 
 
 class FullOfSandError(RuntimeError):
-    """The sand spawn position is taken!."""
+    """The sand spawn position is taken!"""
 
 
 def drop_grain(topology: set[tuple[int, int]], spawn: tuple[int, int] = (500, 0)):
@@ -19,7 +19,7 @@ def drop_grain(topology: set[tuple[int, int]], spawn: tuple[int, int] = (500, 0)
     location = spawn
     while True:
         if location[1] > lowest_y:
-            raise FreeFall("Grain of sand fell past the topology!")
+            raise FreeFallError("Grain of sand fell past the topology!")
 
         for mod in MODS:
             location_candidate = (location[0] + mod[0], location[1] + mod[1])
@@ -53,7 +53,7 @@ def solve(topology) -> int:
         try:
             drop_grain(topology)
             counter += 1
-        except (FreeFall, FullOfSandError):
+        except (FreeFallError, FullOfSandError):
             break
     return counter
 
