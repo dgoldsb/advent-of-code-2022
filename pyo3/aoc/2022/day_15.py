@@ -103,10 +103,7 @@ def part_a(input_: str):
 @time_it
 def part_b(input_: str):
     for i in range(0, RANGE_MAX):
-        ranges = [
-            d.row(i) for d in _diamonds(*_parse(input_))
-            if d.spans_row(i)
-        ]
+        ranges = [d.row(i) for d in _diamonds(*_parse(input_)) if d.spans_row(i)]
         bounded_ranges = [
             range(max(0, min(r.start, r.stop)), min(RANGE_MAX, max(r.start, r.stop)))
             for r in ranges
