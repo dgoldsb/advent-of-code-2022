@@ -5,6 +5,7 @@ from aoc.helpers import time_it
 
 
 def _jets(input_: str) -> Generator[bool, None, None]:
+    input_.replace("\n", "")
     pointer = 0
     while True:
         yield input_[pointer] == "<"  # > is false
@@ -83,12 +84,23 @@ def _print(state, current_highest_y):
         print(line)
 
 
+def _is_cycle(increases):
+    for i in range(len(increases)):
+        candidate = increases[i:]
+        if len(candidate) < 1000:
+            continue
+
+        if candidate[: len(candidate) // 2] == candidate[len(candidate) // 2 :]:
+            return i, candidate[: len(candidate) // 2]
+    return None
+
+
 def _solve(input_: str, rock_count: int):
     state: set[tuple[int, int]] = {(x, 0) for x in range(7)}
     current_highest_y = 0
-
     jet_iterable = _jets(input_)
     rock_type_iterable = _rock_types()
+    changes = []
 
     for _ in range(rock_count):
         rock = _get_rock(current_highest_y, next(rock_type_iterable))
@@ -111,8 +123,21 @@ def _solve(input_: str, rock_count: int):
                 rock = fallen_rock
             else:
                 state = state.union(rock)
-                current_highest_y = max(current_highest_y, max((y for _, y in rock)))
+                new_highest_y = max(current_highest_y, max((y for _, y in rock)))
+                changes.append(new_highest_y - current_highest_y)
+                current_highest_y = new_highest_y
                 break
+
+        if (cycle := _is_cycle(changes)) is not None:
+            start_index, cycle = cycle
+            cycles = (rock_count - start_index) // len(cycle)
+            remainder = (rock_count - start_index) % len(cycle)
+            return (
+                sum(changes[:start_index])
+                + cycles * sum(cycle)
+                + sum(cycle[:remainder])
+            )
+
     return current_highest_y
 
 
