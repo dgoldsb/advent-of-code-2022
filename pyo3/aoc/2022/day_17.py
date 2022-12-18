@@ -95,6 +95,7 @@ def _is_cycle(increases):
     return None
 
 
+# TODO: Cycle finding to Rust, LRUcache it in part 1, then it is just math.
 def _solve(input_: str, rock_count: int):
     state: set[tuple[int, int]] = {(x, 0) for x in range(7)}
     current_highest_y = 0
