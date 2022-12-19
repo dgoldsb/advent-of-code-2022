@@ -1,7 +1,6 @@
 """Solve day 19."""
-import heapq
 import re
-from collections import defaultdict
+from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 from typing import Generator
@@ -82,12 +81,13 @@ class State:
     robots: Robots = Robots(1, 0, 0, 0)
 
     def get_branches(self) -> Generator[RobotType, None, None]:
-        if self.robots.obsidian:
-            yield RobotType.GEODE
+        # Order is important! We want geode to end up on top of the stack.
+        yield RobotType.ORE
+        yield RobotType.CLAY
         if self.robots.clay:
             yield RobotType.OBSIDIAN
-        yield RobotType.CLAY
-        yield RobotType.ORE
+        if self.robots.obsidian:
+            yield RobotType.GEODE
 
     def __lt__(self, other):
         # Explore promising paths, heap will sort the other way around.
@@ -127,29 +127,20 @@ class Blueprint:
         return self.crack_geodes() * self.id
 
     def crack_geodes(self):
-        """Notes...
-
-        We do not always spend all resources.
-        Recursive function to find all branches.
-        """
         best = 0
-        heap = [State(RobotType.ORE), State(RobotType.CLAY)]
+        stack = deque([State(RobotType.ORE), State(RobotType.CLAY)])
         visited = set()
-        best_at_time = defaultdict(int)
 
-        while heap:
-            state = heapq.heappop(heap)
+        while stack:
+            state = stack.popleft()
 
             minerals = state.minerals
             robots = state.robots
 
             best = max(best, state.minerals.geode)
-            best_at_time[state.time] = max(
-                best_at_time[state.time], state.minerals.geode
-            )
 
             if state.time == MINUTES or state.prune(
-                best_at_time[state.time], self.costs
+                best, self.costs
             ):
                 continue
 
@@ -193,9 +184,9 @@ class Blueprint:
                     )
                     if new_state not in visited:
                         visited.add(new_state)
-                        heapq.heappush(heap, new_state)
+                        stack.appendleft(new_state)
             else:
-                heapq.heappush(heap, updated_state)
+                stack.appendleft(updated_state)
 
         return best
 
@@ -232,6 +223,5 @@ def part_b(input_: str):
     # 3472 in example
     # 13104 is too low, it is what I keep getting: 16, 39, 21
     for count in (b.crack_geodes() for b in blueprints):
-        print(count)
         result *= count
     return result
