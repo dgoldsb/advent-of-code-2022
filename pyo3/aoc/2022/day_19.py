@@ -93,7 +93,7 @@ class State:
         # Explore promising paths, heap will sort the other way around.
         return self.minerals.geode > other.minerals.geode or self.time > other.time
 
-    def prune(self, best: int, costs: dict[RobotType, Minerals]):
+    def prune(self, best: int, costs: tuple[int, int, int]):
         # Prevent that...
         time_remaining = MINUTES - self.time
 
@@ -107,9 +107,9 @@ class State:
 
         # Never build more gathering robots than we can spend per turn.
         if (
-            self.robots.clay > max((c.clay for c in costs.values()))
-            or self.robots.ore > max((c.ore for c in costs.values()))
-            or self.robots.obsidian > max((c.obsidian for c in costs.values()))
+            self.robots.ore > costs[0]
+            or self.robots.clay > costs[1]
+            or self.robots.obsidian > costs[2]
         ):
             return True
 
@@ -129,7 +129,12 @@ class Blueprint:
     def crack_geodes(self):
         best = 0
         stack = deque([State(RobotType.ORE), State(RobotType.CLAY)])
-        visited = set()
+
+        max_costs = (
+            max((c.ore for c in self.costs.values())),
+            max((c.clay for c in self.costs.values())),
+            max((c.obsidian for c in self.costs.values())),
+        )
 
         while stack:
             state = stack.popleft()
@@ -139,9 +144,7 @@ class Blueprint:
 
             best = max(best, state.minerals.geode)
 
-            if state.time == MINUTES or state.prune(
-                best, self.costs
-            ):
+            if state.time == MINUTES or state.prune(best, max_costs):
                 continue
 
             # Can I order my next robot?
@@ -182,9 +185,7 @@ class Blueprint:
                         robots=robots,
                         next_robot_type=new_type,
                     )
-                    if new_state not in visited:
-                        visited.add(new_state)
-                        stack.appendleft(new_state)
+                    stack.appendleft(new_state)
             else:
                 stack.appendleft(updated_state)
 
@@ -209,9 +210,7 @@ def _parse(input_: str) -> Generator[Blueprint, None, None]:
 
 @time_it
 def part_a(input_: str):
-    result = sum((b.quality_level for b in _parse(input_)))
-    #assert result == 1487, f"Got {result}"
-    return result
+    return sum((b.quality_level for b in _parse(input_)))
 
 
 @time_it
@@ -220,8 +219,6 @@ def part_b(input_: str):
     MINUTES = 32
     blueprints = list(_parse(input_))[:3]
     result = 1
-    # 3472 in example
-    # 13104 is too low, it is what I keep getting: 16, 39, 21
     for count in (b.crack_geodes() for b in blueprints):
         result *= count
     return result
