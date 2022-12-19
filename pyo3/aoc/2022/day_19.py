@@ -18,26 +18,12 @@ class RobotType(Enum):
     GEODE = "geode"
 
 
-TYPES = (RobotType.ORE, RobotType.CLAY, RobotType.OBSIDIAN, RobotType.GEODE)
-
-
 @dataclass(frozen=True)
 class Minerals:
     ore: int
     clay: int
     obsidian: int
     geode: int
-
-    def __getitem__(self, item) -> int:
-        match item:
-            case RobotType.ORE:
-                return self.ore
-            case RobotType.CLAY:
-                return self.clay
-            case RobotType.OBSIDIAN:
-                return self.obsidian
-            case RobotType.GEODE:
-                return self.geode
 
     def __add__(self, other):
         return Minerals(
@@ -63,18 +49,29 @@ class Minerals:
             and self.geode >= other.geode
         )
 
-    def produce(self) -> "Minerals":
+
+@dataclass(frozen=True)
+class Robots:
+    ore: int
+    clay: int
+    obsidian: int
+    geode: int
+
+    def __add__(self, other):
+        return Robots(
+            self.ore + other.ore,
+            self.clay + other.clay,
+            self.obsidian + other.obsidian,
+            self.geode + other.geode,
+        )
+
+    def produce(self) -> Minerals:
         return Minerals(
             self.ore,
             self.clay,
             self.obsidian,
             self.geode,
         )
-
-
-@dataclass(frozen=True)
-class Robots(Minerals):
-    """Hmmm."""
 
 
 @dataclass(frozen=True)
@@ -85,29 +82,16 @@ class State:
     robots: Robots = Robots(1, 0, 0, 0)
 
     def get_branches(self) -> Generator[RobotType, None, None]:
-        yield RobotType.ORE
-        yield RobotType.CLAY
-        if self.robots.clay:
-            yield RobotType.OBSIDIAN
         if self.robots.obsidian:
             yield RobotType.GEODE
+        if self.robots.clay:
+            yield RobotType.OBSIDIAN
+        yield RobotType.CLAY
+        yield RobotType.ORE
 
     def __lt__(self, other):
         # Explore promising paths, heap will sort the other way around.
         return self.minerals.geode > other.minerals.geode or self.time > other.time
-
-    def _check_resource(self, robot_type: RobotType, time_left: int, max_required: int):
-        """Check if we have too many robots for a resource.
-
-        For any resource R that's not geode: if you already have X robots creating
-        resource R, a current stock of Y for that resource, T minutes left, and no
-        robot requires more than Z of resource R to build, and X * T+Y >= T * Z, then
-        you never need to build another robot mining R anymore.
-        """
-        return (
-            self.robots[robot_type] * time_left + self.minerals[robot_type]
-            >= time_left * max_required
-        )
 
     def prune(self, best: int, costs: dict[RobotType, Minerals]):
         # Prevent that...
@@ -119,20 +103,17 @@ class State:
             + self.robots.geode * time_remaining
             + sum(range(time_remaining + 1))
         ) < best:
-            return False
+            return True
 
         # Never build more gathering robots than we can spend per turn.
-        if any(
-            (
-                self._check_resource(
-                    t, time_remaining, max(c[t] for c in costs.values())
-                )
-                for t in TYPES
-            )
+        if (
+            self.robots.clay > max((c.clay for c in costs.values()))
+            or self.robots.ore > max((c.ore for c in costs.values()))
+            or self.robots.obsidian > max((c.obsidian for c in costs.values()))
         ):
-            return False
+            return True
 
-        return True
+        return False
 
 
 @dataclass
@@ -238,7 +219,7 @@ def _parse(input_: str) -> Generator[Blueprint, None, None]:
 @time_it
 def part_a(input_: str):
     result = sum((b.quality_level for b in _parse(input_)))
-    assert result == 1487, f"Got {result}"
+    #assert result == 1487, f"Got {result}"
     return result
 
 
