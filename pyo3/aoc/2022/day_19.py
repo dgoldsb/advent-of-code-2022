@@ -3,13 +3,22 @@ import heapq
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from typing import Generator
 
 from aoc.helpers import time_it
 
 MINUTES = 24
 
-# TODO: Go by which robot next.
+
+class RobotType(Enum):
+    ORE = "ore"
+    CLAY = "clay"
+    OBSIDIAN = "obsidian"
+    GEODE = "geode"
+
+
+TYPES = (RobotType.ORE, RobotType.CLAY, RobotType.OBSIDIAN, RobotType.GEODE)
 
 
 @dataclass(frozen=True)
@@ -18,6 +27,17 @@ class Minerals:
     clay: int
     obsidian: int
     geode: int
+
+    def __getitem__(self, item) -> int:
+        match item:
+            case RobotType.ORE:
+                return self.ore
+            case RobotType.CLAY:
+                return self.clay
+            case RobotType.OBSIDIAN:
+                return self.obsidian
+            case RobotType.GEODE:
+                return self.geode
 
     def __add__(self, other):
         return Minerals(
@@ -43,27 +63,7 @@ class Minerals:
             and self.geode >= other.geode
         )
 
-
-# Bit hacky, maximum we want before pruning.
-MAX_MINERALS = Minerals(0, 0, 0, 0)
-
-
-@dataclass(frozen=True)
-class Robots:
-    ore: int
-    clay: int
-    obsidian: int
-    geode: int
-
-    def __add__(self, other):
-        return Robots(
-            self.ore + other.ore,
-            self.clay + other.clay,
-            self.obsidian + other.obsidian,
-            self.geode + other.geode,
-        )
-
-    def produce(self) -> Minerals:
+    def produce(self) -> "Minerals":
         return Minerals(
             self.ore,
             self.clay,
@@ -73,69 +73,77 @@ class Robots:
 
 
 @dataclass(frozen=True)
+class Robots(Minerals):
+    """Hmmm."""
+
+
+@dataclass(frozen=True)
 class State:
+    next_robot_type: RobotType
     time: int = 0
     minerals: Minerals = Minerals(0, 0, 0, 0)
     robots: Robots = Robots(1, 0, 0, 0)
 
+    def get_branches(self) -> Generator[RobotType, None, None]:
+        yield RobotType.ORE
+        yield RobotType.CLAY
+        if self.robots.clay:
+            yield RobotType.OBSIDIAN
+        if self.robots.obsidian:
+            yield RobotType.GEODE
+
     def __lt__(self, other):
-        # First sort by time, less is earlier, then by geode count.
-        # TODO: Go deep first
-        return self.time > other.time or (
-            self.time == other.time and self.minerals.geode > other.minerals.geode
+        # Explore promising paths, heap will sort the other way around.
+        return self.minerals.geode > other.minerals.geode or self.time > other.time
+
+    def _check_resource(self, robot_type: RobotType, time_left: int, max_required: int):
+        """Check if we have too many robots for a resource.
+
+        For any resource R that's not geode: if you already have X robots creating
+        resource R, a current stock of Y for that resource, T minutes left, and no
+        robot requires more than Z of resource R to build, and X * T+Y >= T * Z, then
+        you never need to build another robot mining R anymore.
+        """
+        return (
+            self.robots[robot_type] * time_left + self.minerals[robot_type]
+            >= time_left * max_required
         )
 
-    def prune(self, best: int):
+    def prune(self, best: int, costs: dict[RobotType, Minerals]):
         # Prevent that...
-        return (
-            # We have too many arbitrary robots.
-            self.robots.clay > 10 or
-            self.robots.ore > 20 or
-            self.robots.obsidian > 10 or
-            # We saved too much.
-            self.minerals.clay > MAX_MINERALS.clay or
-            self.minerals.ore > MAX_MINERALS.ore or
-            self.minerals.obsidian > MAX_MINERALS.obsidian or
-            # We are behind our best.
-            # TODO: part 2 has catchup possibilities, part 1 does not.
-            self.minerals.geode + 2 < best
-        )
+        time_remaining = MINUTES - self.time
+
+        # We are behind our best and have no hope of catching up.
+        if (
+            self.minerals.geode
+            + self.robots.geode * time_remaining
+            + sum(range(time_remaining + 1))
+        ) < best:
+            return False
+
+        # Never build more gathering robots than we can spend per turn.
+        if any(
+            (
+                self._check_resource(
+                    t, time_remaining, max(c[t] for c in costs.values())
+                )
+                for t in TYPES
+            )
+        ):
+            return False
+
+        return True
 
 
 @dataclass
 class Blueprint:
 
     id: int
-    ore_robot_cost: Minerals
-    clay_robot_cost: Minerals
-    obsidian_robot_cost: Minerals
-    geode_robot_cost: Minerals
+    costs: dict[RobotType, Minerals]
 
     @property
     def quality_level(self):
         return self.crack_geodes() * self.id
-
-    def _get_branches(
-        self, current_minerals: Minerals
-    ) -> list[tuple[Robots, Minerals]]:
-        bought = []
-
-        if current_minerals > self.geode_robot_cost:
-            bought.append((Robots(0, 0, 0, 1), self.geode_robot_cost))
-            return bought
-
-        if current_minerals > self.ore_robot_cost:
-            bought.append((Robots(1, 0, 0, 0), self.ore_robot_cost))
-
-        if current_minerals > self.clay_robot_cost:
-            bought.append((Robots(0, 1, 0, 0), self.clay_robot_cost))
-
-        if current_minerals > self.obsidian_robot_cost:
-            bought.append((Robots(0, 0, 1, 0), self.obsidian_robot_cost))
-
-        bought.append((Robots(0, 0, 0, 0), Minerals(0, 0, 0, 0)))
-
-        return bought
 
     def crack_geodes(self):
         """Notes...
@@ -143,48 +151,71 @@ class Blueprint:
         We do not always spend all resources.
         Recursive function to find all branches.
         """
-        global MAX_MINERALS
-
-        MAX_MINERALS = Minerals(
-            2 * max(self.ore_robot_cost.ore, self.clay_robot_cost.ore, self.obsidian_robot_cost.ore, self.geode_robot_cost.ore),
-            2 * max(self.ore_robot_cost.clay, self.clay_robot_cost.clay, self.obsidian_robot_cost.clay, self.geode_robot_cost.clay),
-            2 * max(self.ore_robot_cost.obsidian, self.clay_robot_cost.obsidian, self.obsidian_robot_cost.obsidian, self.geode_robot_cost.obsidian),
-            0,
-        )
-
         best = 0
-        heap = [State()]
+        heap = [State(RobotType.ORE), State(RobotType.CLAY)]
         visited = set()
         best_at_time = defaultdict(int)
 
         while heap:
             state = heapq.heappop(heap)
 
+            minerals = state.minerals
+            robots = state.robots
+
             best = max(best, state.minerals.geode)
             best_at_time[state.time] = max(
                 best_at_time[state.time], state.minerals.geode
             )
 
-            if state.time == MINUTES or state.prune(best_at_time[state.time]):
+            if state.time == MINUTES or state.prune(
+                best_at_time[state.time], self.costs
+            ):
                 continue
-            print(state)
-            # Order robots
-            branches = self._get_branches(state.minerals)
+
+            # Can I order my next robot?
+            price = self.costs[state.next_robot_type]
+            if price < state.minerals:
+                building = True
+                minerals -= price
+            else:
+                building = False
 
             # Mine
-            post_mine_minerals = state.minerals + state.robots.produce()
+            minerals += state.robots.produce()
 
-            # Build
-            for robot, cost in branches:
-                post_build_state = State(
-                    state.time + 1,
-                    minerals=post_mine_minerals - cost,
-                    robots=state.robots + robot,
-                )
+            # Build, if any
+            if building:
+                match state.next_robot_type:
+                    case RobotType.ORE:
+                        robots += Robots(1, 0, 0, 0)
+                    case RobotType.CLAY:
+                        robots += Robots(0, 1, 0, 0)
+                    case RobotType.OBSIDIAN:
+                        robots += Robots(0, 0, 1, 0)
+                    case RobotType.GEODE:
+                        robots += Robots(0, 0, 0, 1)
 
-                if post_build_state not in visited:
-                    visited.add(post_build_state)
-                    heapq.heappush(heap, post_build_state)
+            # Prepare next, if we just built one, otherwise just update the state.
+            updated_state = State(
+                time=state.time + 1,
+                minerals=minerals,
+                robots=robots,
+                next_robot_type=state.next_robot_type,
+            )
+            if building:
+                for new_type in updated_state.get_branches():
+                    new_state = State(
+                        time=state.time + 1,
+                        minerals=minerals,
+                        robots=robots,
+                        next_robot_type=new_type,
+                    )
+                    if new_state not in visited:
+                        visited.add(new_state)
+                        heapq.heappush(heap, new_state)
+            else:
+                heapq.heappush(heap, updated_state)
+
         return best
 
 
@@ -195,10 +226,12 @@ def _parse(input_: str) -> Generator[Blueprint, None, None]:
     for result in regex.findall(input_):
         yield Blueprint(
             id=int(result[0]),
-            ore_robot_cost=Minerals(int(result[1]), 0, 0, 0),
-            clay_robot_cost=Minerals(int(result[2]), 0, 0, 0),
-            obsidian_robot_cost=Minerals(int(result[3]), int(result[4]), 0, 0),
-            geode_robot_cost=Minerals(int(result[5]), 0, int(result[6]), 0),
+            costs={
+                RobotType.ORE: Minerals(int(result[1]), 0, 0, 0),
+                RobotType.CLAY: Minerals(int(result[2]), 0, 0, 0),
+                RobotType.OBSIDIAN: Minerals(int(result[3]), int(result[4]), 0, 0),
+                RobotType.GEODE: Minerals(int(result[5]), 0, int(result[6]), 0),
+            },
         )
 
 

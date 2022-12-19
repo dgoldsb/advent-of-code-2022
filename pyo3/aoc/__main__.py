@@ -19,7 +19,7 @@ def main():
                     solver = _get_solver(year, day, part)
                     solution = solver(get_input(year, day))
                     print(f"{year}.{day}.{part}: {solution}")
-                except (AttributeError, ImportError):
+                except (AttributeError, ImportError) as exc:
                     continue
     total_time = sum(TIMES.values())
     print(f"\nTotal time taken (solvers only): {total_time}")
