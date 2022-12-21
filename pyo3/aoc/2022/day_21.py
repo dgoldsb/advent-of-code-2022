@@ -1,4 +1,5 @@
 """Solve day 21."""
+# TODO: Try tree for faster less hacky way.
 import re
 
 from aoc.helpers import time_it

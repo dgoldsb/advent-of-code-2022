@@ -1,4 +1,5 @@
 """Solve day 20."""
+# TODO: Ringbuffer alternative.
 from collections import deque
 from copy import copy
 
