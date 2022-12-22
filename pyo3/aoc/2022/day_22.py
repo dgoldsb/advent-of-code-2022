@@ -7,6 +7,7 @@ from typing import NewType, Sequence
 from aoc.helpers import time_it
 
 Coordinate = NewType("Coordinate", tuple[int, int])
+PART_B = False
 
 
 class Rotation(Enum):
@@ -51,6 +52,57 @@ class Orientation(Enum):
         return self
 
 
+def _translate(
+    pos: Coordinate, orientation: Orientation
+) -> tuple[Coordinate, Orientation]:
+    x, y = pos
+    match (x, y, orientation):
+        # Note: mind off-by-one errors, ranges go 0-49 etc.
+        case (0, yy, Orientation.LEFT):
+            if 100 <= yy < 150:
+                return Coordinate((50, 149 - yy)), Orientation.RIGHT
+            if 150 <= yy < 200:
+                return Coordinate((yy - 100, 0)), Orientation.DOWN
+        case (49, yy, Orientation.RIGHT):
+            if 150 <= yy < 200:
+                return Coordinate((yy - 100, 149)), Orientation.UP
+        case (50, yy, Orientation.LEFT):
+            if 0 <= yy < 50:
+                return Coordinate((0, 149 - yy)), Orientation.RIGHT
+            if 50 <= yy < 100:
+                return Coordinate((yy - 50, 100)), Orientation.DOWN
+        case (99, yy, Orientation.RIGHT):
+            if 50 <= yy < 100:
+                return Coordinate((yy + 50, 49)), Orientation.UP
+            if 100 <= yy < 150:
+                return Coordinate((149, 149 - yy)), Orientation.LEFT
+        case (149, yy, Orientation.RIGHT):
+            if 0 <= yy < 50:
+                return Coordinate((99, 149 - yy)), Orientation.LEFT
+        case (xx, 0, Orientation.UP):
+            if 50 <= xx < 100:
+                return Coordinate((0, 100 + xx)), Orientation.RIGHT
+            if 100 <= xx < 150:
+                return Coordinate((xx - 100, 199)), Orientation.UP
+        case (xx, 49, Orientation.DOWN):
+            if 100 <= xx < 150:
+                return Coordinate((99, xx - 50)), Orientation.LEFT
+        case (xx, 100, Orientation.UP):
+            if 0 <= xx < 50:
+                return Coordinate((50, 50 + xx)), Orientation.RIGHT
+        case (xx, 149, Orientation.DOWN):
+            if 50 <= xx < 100:
+                return Coordinate((49, 100 + xx)), Orientation.LEFT
+        case (xx, 199, Orientation.DOWN):
+            if 0 <= xx < 50:
+                return Coordinate((xx + 100, 0)), Orientation.DOWN
+    raise RuntimeError("Not yet translated using the cardboard cube!!")
+
+
+class RejectError(Exception):
+    """Reject a cube step, there is a wall!"""
+
+
 @dataclass
 class Instruction:
     walk: int
@@ -72,16 +124,23 @@ class Walker:
             self.__position = self.__move(distance=instruction.walk)
             self.__orientation = self.__orientation.turn(instruction.rotate)
 
-    def __evaluate_candidate(self, pos, candidate):
+    def __evaluate_candidate(self, pos, candidate, orientation):
+        if PART_B:
+            try:
+                new_candidate, new_orientation = _translate(pos, orientation)
+            except RuntimeError:
+                pass
+
         if candidate in self.__walls:
             # Reject candidate.
-            return pos
+            raise RejectError("Wall!")
         elif candidate in self.__topology:
             # Accept candidate
-            return candidate
-        else:
-            # Find a new candidate.
-            match self.__orientation:
+            return candidate, orientation
+
+        # Find a new candidate the old way.
+        if not PART_B:
+            match orientation:
                 # Loading topology left -> right, up -> down. This flips the up/down
                 # directions of the player.
                 case Orientation.RIGHT:
@@ -106,7 +165,14 @@ class Walker:
                     )
                 case _:
                     raise RuntimeError("Invalid orientation.")
-            return self.__evaluate_candidate(pos, new_candidate)
+            new_orientation = orientation
+
+        try:
+            return self.__evaluate_candidate(
+                new_candidate, new_candidate, new_orientation
+            )
+        except RejectError:
+            return pos, orientation
 
     def __move(self, distance: int) -> Coordinate:
         pos = self.__position
@@ -124,7 +190,12 @@ class Walker:
                     candidate = (pos[0], pos[1] + 1)
                 case _:
                     raise RuntimeError("Invalid orientation.")
-            pos = self.__evaluate_candidate(pos, candidate)
+            try:
+                pos, self.__orientation = self.__evaluate_candidate(
+                    pos, candidate, self.__orientation
+                )
+            except RejectError:
+                pass
         return pos
 
     def score(self) -> int:
@@ -182,4 +253,9 @@ def part_a(input_: str):
 
 @time_it
 def part_b(input_: str):
-    return None
+    global PART_B
+    PART_B = True
+    start, topology, walls, instructions = _parse(input_)
+    walker = Walker(start, topology, walls)
+    walker.execute(instructions)
+    return walker.score()
