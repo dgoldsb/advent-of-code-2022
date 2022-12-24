@@ -45,7 +45,8 @@ class Valley:
             case Direction.SOUTH:
                 candidate = (loc[0], loc[1] - 1)
                 if candidate in self.walls:
-                    candidate = (loc[0], max(w[1] for w in self.walls) - 1)
+                    # Compensate for my earlier hack.
+                    candidate = (loc[0], max(w[1] for w in self.walls) - 2)
             case Direction.EAST:
                 candidate = (loc[0] + 1, loc[1])
                 if candidate in self.walls:
@@ -114,6 +115,8 @@ def _parse_valley(input_: str) -> Valley:
                     blizzards.append((Direction.EAST, (x, y)))
                 case "v":
                     blizzards.append((Direction.SOUTH, (x, y)))
+                case "V":
+                    blizzards.append((Direction.SOUTH, (x, y)))
                 case ".":
                     if y == first_line_idx * -1:
                         start = (x, y)
@@ -175,7 +178,6 @@ def _search_exit(valley: Valley):
 @time_it
 def part_a(input_: str):
     valley = _parse_valley(input_)
-    # TODO: 279 is too low, 368 too high
     return _search_exit(valley)
 
 
