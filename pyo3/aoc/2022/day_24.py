@@ -129,12 +129,6 @@ def _parse_valley(input_: str) -> Valley:
     return Valley(start, end, blizzards, walls)
 
 
-def _manhattan_distance(x: Coordinate, y: Coordinate) -> int:
-    return abs(max(x[0], y[0]) - min(x[0], y[0])) + abs(
-        max(x[1], y[1]) - min(x[1], y[1])
-    )
-
-
 @dataclass(frozen=True)
 class Situation:
     time: int
@@ -142,18 +136,13 @@ class Situation:
     target: Coordinate
 
     def __lt__(self, other):
-        # Less is more likely to evaluate, closer to goal!
-        return _manhattan_distance(self.place, self.target) < _manhattan_distance(
-            other.place, other.target
-        )
+        return self.time < other.time
 
 
 def _search_exit(valley: Valley, start_time=0):
     start_situation = Situation(start_time, valley.start, valley.end)
     heap = [start_situation]
     memo = set()
-
-    best_answer = 100_000_000
     while heap:
         situation = heapq.heappop(heap)
 
@@ -163,19 +152,11 @@ def _search_exit(valley: Valley, start_time=0):
             memo.add(situation)
 
         if situation.place == situation.target:
-            best_answer = min(best_answer, situation.time)
-            continue
-
-        if (
-            situation.time + _manhattan_distance(situation.place, situation.target)
-        ) >= best_answer:
-            # Prune.
-            continue
+            return situation.time
 
         new_time = situation.time + 1
         for new_place in valley.branch(new_time, situation.place):
             heapq.heappush(heap, Situation(new_time, new_place, situation.target))
-    return best_answer
 
 
 @time_it
