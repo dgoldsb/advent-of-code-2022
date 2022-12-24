@@ -7,6 +7,7 @@ Notes:
  - Cartesian distance as heuristic, then aggressive pruning once we find a path.
 """
 import heapq
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
@@ -41,7 +42,8 @@ class Valley:
             case Direction.NORTH:
                 candidate = (loc[0], loc[1] + 1)
                 if candidate in self.walls:
-                    candidate = (loc[0], min(w[1] for w in self.walls) + 1)
+                    # Compensate for my earlier hack.
+                    candidate = (loc[0], min(w[1] for w in self.walls) + 2)
             case Direction.SOUTH:
                 candidate = (loc[0], loc[1] - 1)
                 if candidate in self.walls:
@@ -92,12 +94,12 @@ def _parse_valley(input_: str) -> Valley:
     blizzards = []
 
     # To disallow sneaking around.
-    input_ = "####\n" + input_
+    input_ = "#" * 122 + "\n" + input_ + "\n" + "#" * 122
 
     lines = input_.splitlines()
 
     first_line_idx = 1
-    last_line_idx = len(lines)
+    last_line_idx = len(lines) - 2
     start = None
     end = None
 
@@ -120,7 +122,7 @@ def _parse_valley(input_: str) -> Valley:
                 case ".":
                     if y == first_line_idx * -1:
                         start = (x, y)
-                    elif y == last_line_idx * -1 + 1:
+                    elif y == last_line_idx * -1:
                         end = (x, y)
     assert start is not None
     assert end is not None
@@ -146,8 +148,8 @@ class Situation:
         )
 
 
-def _search_exit(valley: Valley):
-    start_situation = Situation(0, valley.start, valley.end)
+def _search_exit(valley: Valley, start_time=0):
+    start_situation = Situation(start_time, valley.start, valley.end)
     heap = [start_situation]
     memo = set()
 
@@ -175,6 +177,7 @@ def _search_exit(valley: Valley):
             heapq.heappush(heap, Situation(new_time, new_place, situation.target))
     return best_answer
 
+
 @time_it
 def part_a(input_: str):
     valley = _parse_valley(input_)
@@ -183,4 +186,10 @@ def part_a(input_: str):
 
 @time_it
 def part_b(input_: str):
-    return None
+    sys.setrecursionlimit(10_000)
+    valley = _parse_valley(input_)
+    first = _search_exit(valley)
+    reverse_valley = Valley(valley.end, valley.start, valley.blizzards, valley.walls)
+    second = _search_exit(reverse_valley, first)
+    third = _search_exit(valley, second)
+    return third
