@@ -6,6 +6,8 @@ Notes:
  - Standing still is an option.
  - Cartesian distance as heuristic, then aggressive pruning once we find a path.
 """
+import heapq
+from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from typing import NewType, Generator
@@ -61,7 +63,9 @@ class Valley:
         if time == 0:
             return self
         start_state = self._get_state(time - 1)
-        new_blizzards = [self._evolve_blizzard(b) for b in start_state.blizzards]
+        new_blizzards = [
+            (b[0], self._evolve_blizzard(b)) for b in start_state.blizzards
+        ]
         return type(self)(self.start, self.end, new_blizzards, self.walls)
 
     @lru_cache
@@ -120,10 +124,59 @@ def _parse_valley(input_: str) -> Valley:
     return Valley(start, end, blizzards, walls)
 
 
+def _manhattan_distance(x: Coordinate, y: Coordinate) -> int:
+    return abs(max(x[0], y[0]) - min(x[0], y[0])) + abs(
+        max(x[1], y[1]) - min(x[1], y[1])
+    )
+
+
+@dataclass(frozen=True)
+class Situation:
+    time: int
+    place: Coordinate
+    target: Coordinate
+
+    def __lt__(self, other):
+        # Less is more likely to evaluate, closer to goal!
+        return _manhattan_distance(self.place, self.target) < _manhattan_distance(
+            other.place, other.target
+        )
+
+
+def _search_exit(valley: Valley):
+    start_situation = Situation(0, valley.start, valley.end)
+    heap = [start_situation]
+    memo = set()
+
+    best_answer = 100_000_000
+    while heap:
+        situation = heapq.heappop(heap)
+
+        if situation in memo:
+            continue
+        else:
+            memo.add(situation)
+
+        if situation.place == situation.target:
+            best_answer = min(best_answer, situation.time)
+            continue
+
+        if (
+            situation.time + _manhattan_distance(situation.place, situation.target)
+        ) >= best_answer:
+            # Prune.
+            continue
+
+        new_time = situation.time + 1
+        for new_place in valley.branch(new_time, situation.place):
+            heapq.heappush(heap, Situation(new_time, new_place, situation.target))
+    return best_answer
+
 @time_it
 def part_a(input_: str):
     valley = _parse_valley(input_)
-    return None
+    # TODO: 279 is too low, 368 too high
+    return _search_exit(valley)
 
 
 @time_it
