@@ -13,7 +13,7 @@ def _get_solver(year: int, day: int, part: str) -> Callable[[str], Any]:
 
 def main():
     for year in (2022,):
-        for day in range(23, 22, -1):
+        for day in range(24, 23, -1):
             for part in ("a", "b"):
                 try:
                     solver = _get_solver(year, day, part)
