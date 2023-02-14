@@ -13,20 +13,20 @@ public class Day03Test {
     public void testFindA() {
         Day03 day = new Day03();
         Character result = day.findA("vJrwpWtwJgWrhcsFMMfFFhFp");
-        assertEquals(result.charValue(), 'p');
+        assertEquals('p', result.charValue());
     }
 
     @Test
     public void testCharToIntLower() {
         Day03 day = new Day03();
         int result = day.charToInt('p');
-        assertEquals(result, 16);
+        assertEquals(16, result);
     }
 
     @Test
     public void testCharToIntUpper() {
         Day03 day = new Day03();
         int result = day.charToInt('P');
-        assertEquals(result, 42);
+        assertEquals(42, result);
     }
 }
