@@ -20,4 +20,8 @@ public class InputParser {
         URI fileName = URI.create(("file://%s/%d/%d.txt").formatted(INPUT_ROOT, year, day));
         return Files.lines(Paths.get(fileName));
     }
+
+    public Stream<Integer> readIntegers() throws IOException {
+        return readLines().map(Integer::parseInt);
+    }
 }
