@@ -16,12 +16,11 @@ public class RingBuffer<T> {
 
     public void rotate(int offset) {
         this.pointer += offset;
-        if (this.pointer >= this.items.size()) {
-            this.pointer = this.pointer % this.items.size();
-        } else if (this.pointer < 0) {
+        if (this.pointer < 0) {
             int sizeMultiple = this.items.size() * (((this.pointer * -1) / this.items.size()) + 1);
             this.pointer += sizeMultiple;
         }
+        this.pointer = this.pointer % this.items.size();
     }
 
     public T peek() {

@@ -1,10 +1,12 @@
 package aoc.decrypt;
 
+import java.math.BigInteger;
+
 public class MixItem {
     public int identifier;
-    public int value;
+    public BigInteger value;
 
-    public MixItem(int identifier, int value) {
+    public MixItem(int identifier, BigInteger value) {
         this.identifier = identifier;
         this.value = value;
     }
