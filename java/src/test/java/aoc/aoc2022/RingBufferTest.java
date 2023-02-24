@@ -3,8 +3,7 @@ package aoc.aoc2022;
 import aoc.structures.RingBuffer;
 import org.junit.Test;
 
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -13,7 +12,7 @@ public class RingBufferTest {
     @Test
     public void testAppendLeft1() {
         // Given
-        RingBuffer<Integer> buffer = new RingBuffer<>(Stream.of(1));
+        RingBuffer<Integer> buffer = new RingBuffer<>(List.of(1));
 
         // When
         buffer.appendLeft(2);
