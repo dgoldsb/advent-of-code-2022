@@ -109,4 +109,40 @@ public class MixableRingBufferTest {
         // Then
         assertEquals(expectedSequence7, buffer.toValueList());
     }
+
+    @Test
+    public void testMixEdgeCase() {
+        // Given
+        List<BigInteger> startSequence = Stream.of(0, -1, -1, 1).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence1 = Stream.of(0, -1, -1, 1).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence2 = Stream.of(-1, 0, -1, 1).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence3 = Stream.of(-1, -1, 0, 1).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence4 = Stream.of(-1, 1, -1, 0).map(i -> new BigInteger(i.toString())).toList();
+
+        MixableRingBuffer buffer = new MixableRingBuffer(startSequence);
+
+        // When
+        buffer.mix(0);
+
+        // Then
+        assertEquals(expectedSequence1, buffer.toValueList());
+
+        // When
+        buffer.mix(1);
+
+        // Then
+        assertEquals(expectedSequence2, buffer.toValueList());
+
+        // When
+        buffer.mix(2);
+
+        // Then
+        assertEquals(expectedSequence3, buffer.toValueList());
+
+        // When
+        buffer.mix(3);
+
+        // Then
+        assertEquals(expectedSequence4, buffer.toValueList());
+    }
 }
