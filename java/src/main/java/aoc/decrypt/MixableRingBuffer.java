@@ -11,10 +11,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class MixableRingBuffer extends RingBuffer<Integer> {
-    // TODO: keep ringbuffer of identifiers.
-    // TODO: keep map to value.
-    // TODO: for fast find, ...
-
     HashMap<Integer, BigInteger> indexValueMap = new HashMap<>();
 
     public MixableRingBuffer(List<BigInteger> valueList) {
