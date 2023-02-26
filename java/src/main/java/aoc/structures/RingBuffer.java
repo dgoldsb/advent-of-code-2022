@@ -6,7 +6,7 @@ import java.util.List;
 
 public class RingBuffer<T> {
     private final LinkedList<T> items;
-    private int pointer;
+    private Integer pointer;
 
     public RingBuffer(List<T> list) {
         this.pointer = 0;
@@ -16,7 +16,12 @@ public class RingBuffer<T> {
 
     public void rotate(int offset) {
         this.pointer += offset;
-        this.pointer = this.normalize(this.pointer);
+        this.pointer = this.normalize(this.pointer, this.items.size());
+    }
+
+    public void rotate(BigInteger offset) {
+        BigInteger pointer = offset.add(new BigInteger(this.pointer.toString()));
+        this.pointer = this.normalize(pointer, this.items.size());
     }
 
     public T peek() {
@@ -24,7 +29,7 @@ public class RingBuffer<T> {
     }
 
     public T removeLeft() {
-        T value = this.items.remove(this.pointer);
+        T value = this.items.remove(this.pointer.intValue());
         if (this.pointer > this.items.size()) {
             this.pointer = 0;
         }
@@ -40,17 +45,12 @@ public class RingBuffer<T> {
         return this.items.indexOf(value);
     }
 
-    public int normalize(BigInteger index) {
-        int size = this.items.size();
-        int rotation = Integer.parseInt(index.mod(new BigInteger(Integer.toString(size))).toString());
-        if (index.toString().charAt(0) == '-') {
-            rotation -= 1;
-        }
-        return rotation;
+    public int normalize(BigInteger index, int size) {
+        return Integer.parseInt(index.mod(new BigInteger(Integer.toString(size))).toString());
     }
 
-    private int normalize(Integer index) {
-        return this.normalize(new BigInteger(index.toString()));
+    private int normalize(Integer index, int size) {
+        return this.normalize(new BigInteger(index.toString()), size);
     }
 
     public void putFirst(T identifier) {

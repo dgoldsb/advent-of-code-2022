@@ -26,10 +26,38 @@ public class MixableRingBufferTest {
     }
 
     @Test
-    public void testMixLarge() {
+    public void testMixLarge1() {
         // Given
-        List<BigInteger> startSequence = Stream.of(702, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
-        List<BigInteger> expectedSequence1 = Stream.of(2, -3, 702, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> startSequence = Stream.of(8, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence1 = Stream.of(2, -3, 8, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        MixableRingBuffer buffer = new MixableRingBuffer(startSequence);
+
+        // When
+        buffer.mix(0);
+
+        // Then
+        assertEquals(expectedSequence1, buffer.toValueList());
+    }
+
+    @Test
+    public void testMixLarge2() {
+        // Given
+        List<BigInteger> startSequence = Stream.of(16, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence1 = Stream.of(2, -3, 3, -2, 16, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        MixableRingBuffer buffer = new MixableRingBuffer(startSequence);
+
+        // When
+        buffer.mix(0);
+
+        // Then
+        assertEquals(expectedSequence1, buffer.toValueList());
+    }
+
+    @Test
+    public void testMixLarge3() {
+        // Given
+        List<BigInteger> startSequence = Stream.of(24, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence1 = Stream.of(24, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
         MixableRingBuffer buffer = new MixableRingBuffer(startSequence);
 
         // When
@@ -42,8 +70,8 @@ public class MixableRingBufferTest {
     @Test
     public void testMixLargeNegative() {
         // Given
-        List<BigInteger> startSequence = Stream.of(-702, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
-        List<BigInteger> expectedSequence1 = Stream.of(2, -3, 3, -2, -702, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> startSequence = Stream.of(-8, 2, -3, 3, -2, 0, 4).map(i -> new BigInteger(i.toString())).toList();
+        List<BigInteger> expectedSequence1 = Stream.of(2, -3, 3, -2, -8, 0, 4).map(i -> new BigInteger(i.toString())).toList();
         MixableRingBuffer buffer = new MixableRingBuffer(startSequence);
 
         // When

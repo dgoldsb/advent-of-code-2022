@@ -28,14 +28,12 @@ public class MixableRingBuffer extends RingBuffer<Integer> {
 
     public void mix(int identifier) {
         int currentHead = this.peek();
-        BigInteger value = this.indexValueMap.get(identifier);
-        int rotation = this.normalize(value);
+        BigInteger rotation = this.indexValueMap.get(identifier);
 
         this.putFirst(identifier);
         this.removeLeft();
 
         // Figure out the rotation, without overflowing the integer.
-        // TODO: Cache normalization.
         this.rotate(rotation);
 
         this.appendLeft(identifier);
